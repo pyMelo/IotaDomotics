@@ -36,3 +36,44 @@
     transform: rotate(360deg);
   }
 }
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Imposta l'altezza del contenitore a 100% della viewport */
+}
+
+.stage-container {
+  border: 1px solid #ccc; /* Aggiungi un bordo opzionale intorno alla piantina */
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Aggiungi un'ombra per evidenziarla */
+}
+
+.sidebar {
+  background-color: #f0f0f0; /* Sfondo grigio chiaro */
+  width: 400px;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  height: 100vh; /* Rende la barra laterale alta quanto la finestra */
+  overflow-y: auto; /* Aggiunge lo scroll in caso di contenuti lunghi */
+}
+
+.control-panel h4 {
+  margin-top: 0;
+}
+
+.control-panel p {
+  margin: 5px 0;
+}
+
+.control-panel button {
+  width: 100%;
+  margin-top: 10px;
+}
+.line {
+  height: 2px; /* Spessore della linea */
+  background-color: #ccc; /* Colore della linea */
+  margin: 10px 0; /* Spaziatura sopra e sotto */
+  width: 100%; /* Lunghezza della linea (adatta alla larghezza del contenitore) */
+}
+
