@@ -1,9 +1,8 @@
+// Frontend (React)
 import 'bootstrap/dist/css/bootstrap.min.css';
-
 import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import "./App.css"; // Include your custom CSS if needed
-
 
 const contractABI = [
   "function toggleLight(uint8 lightNumber) public",
@@ -37,9 +36,6 @@ function App() {
         // Create a contract instance with the signer
         const contractInstance = new ethers.Contract(contractAddress, contractABI, signer);
         setContract(contractInstance); // Save the contract instance to state
-
-        // Fetch initial light status
-        fetchLightsStatus(contractInstance);
       } else {
         console.error("MetaMask is not installed!");
       }
@@ -47,6 +43,12 @@ function App() {
 
     initProvider();
   }, [contractAddress]);
+
+  useEffect(() => {
+    if (contract) {
+      fetchLightsStatus(contract);
+    }
+  }, [contract]);
 
   const fetchLightsStatus = async (contractInstance) => {
     try {
@@ -57,7 +59,6 @@ function App() {
       console.error("Error fetching lights status:", error);
     }
   };
-  
 
   const toggleLight = async (lightNumber) => {
     try {
@@ -90,7 +91,7 @@ function App() {
             ></div>
             <button
               className="btn btn-primary"
-              onClick={() => toggleLight(index + 1)}
+              onClick={() => toggleLight(index)}
             >
               Toggle Light {index + 1}
             </button>
