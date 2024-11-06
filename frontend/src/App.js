@@ -1,105 +1,135 @@
-// Frontend (React)
-import 'bootstrap/dist/css/bootstrap.min.css';
-import React, { useState, useEffect } from "react";
-import { ethers } from "ethers";
-import "./App.css"; // Include your custom CSS if needed
+import { useState, useEffect } from 'react';
+import debounce from 'lodash.debounce';
+import { ethers } from 'ethers';
 
-const contractABI = [
-  "function toggleLight(uint8 lightNumber) public",
-  "function getLightsStatus() public view returns (bool, bool, bool)",
-];
+const App = () => {
+    const [isOn, setIsOn] = useState(false);
+    const [intensity, setIntensity] = useState(50);
+    const [confirmedIntensity, setConfirmedIntensity] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
 
-function App() {
-  const [lights, setLights] = useState([false, false, false]);
-  const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(false);
-  const [contract, setContract] = useState(null); // State to store the contract instance
+    // Connect to Shimmer or other network via JSON-RPC provider
+    const provider = new ethers.JsonRpcProvider(process.env.REACT_APP_SHIMMER_RPC_URL || "https://json-rpc.evm.testnet.shimmer.network");
 
-  const contractAddress = process.env.REACT_APP_CONTRACT_ADDRESS;
-
-  useEffect(() => {
-    const initProvider = async () => {
-      if (window.ethereum) {
-        try {
-          // Request access to MetaMask accounts
-          await window.ethereum.request({ method: "eth_requestAccounts" });
-          setIsMetaMaskConnected(true);
-        } catch (error) {
-          console.error("User denied account access to MetaMask", error);
-          return;
+    const contractAddress = "0x496e99977fFd702Bee98a194937c507fAc074D12"; // Replace with your deployed contract address
+    const contractABI = [
+        {
+            "inputs": [],
+            "name": "lightIntensity",
+            "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+            "stateMutability": "view",
+            "type": "function"
         }
+    ];
+    const contract = new ethers.Contract(contractAddress, contractABI, provider);
 
-        const provider = new ethers.BrowserProvider(window.ethereum);
+    // Fetch the current state from the contract when the component mounts
+    useEffect(() => {
+        const fetchContractState = async () => {
+            try {
+                const intensityFromContract = await contract.lightIntensity();
+                const currentIntensity = parseInt(intensityFromContract.toString(), 10);
+                
+                setConfirmedIntensity(currentIntensity);
+                setIntensity(currentIntensity);
+                setIsOn(currentIntensity > 0);
+            } catch (error) {
+                console.error("Failed to fetch contract state:", error);
+            }
+        };
 
-        // Get the signer instance from the provider
-        const signer = await provider.getSigner();
+        fetchContractState();
+    }, [contract]);
 
-        // Create a contract instance with the signer
-        const contractInstance = new ethers.Contract(contractAddress, contractABI, signer);
-        setContract(contractInstance); // Save the contract instance to state
-      } else {
-        console.error("MetaMask is not installed!");
-      }
+    // Debounce function for sending updates to the relayer
+    const debouncedSendToRelayer = debounce(async (newIntensity) => {
+        setIsLoading(true);
+        try {
+            const response = await fetch("http://localhost:4000/relay", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ isOn: true, intensity: newIntensity }),
+            });
+            const data = await response.json();
+
+            setConfirmedIntensity(newIntensity);
+            setIsLoading(false);
+            console.log("Transaction successful:", data.txHash);
+        } catch (error) {
+            console.error("Failed to update intensity:", error);
+            setIsLoading(false);
+        }
+    }, 500);
+
+    // Send intensity to relayer on changes
+    useEffect(() => {
+        if (isOn) {
+            debouncedSendToRelayer(intensity);
+        }
+        return () => debouncedSendToRelayer.cancel();
+    }, [intensity, isOn]);
+
+    const handleIntensityChange = (e) => {
+        const newIntensity = parseInt(e.target.value, 10);
+        setIntensity(newIntensity);
     };
 
-    initProvider();
-  }, [contractAddress]);
+    const toggleLight = () => {
+        const newStatus = !isOn;
+        setIsOn(newStatus);
+        if (!newStatus) {
+            debouncedSendToRelayer(0);
+        }
+    };
 
-  useEffect(() => {
-    if (contract) {
-      fetchLightsStatus(contract);
-    }
-  }, [contract]);
+    const getLightColor = () => {
+        if (!isOn) return "gray";
 
-  const fetchLightsStatus = async (contractInstance) => {
-    try {
-      const status = await contractInstance.getLightsStatus();
-      console.log("Fetched status:", status);
-      setLights([status[0], status[1], status[2]]);
-    } catch (error) {
-      console.error("Error fetching lights status:", error);
-    }
-  };
+        const minColor = { r: 255, g: 230, b: 128 };
+        const maxColor = { r: 255, g: 204, b: 0 };
 
-  const toggleLight = async (lightNumber) => {
-    try {
-      if (!contract) return; // Ensure the contract is defined
-      const tx = await contract.toggleLight(lightNumber);
-      await tx.wait();
-      // Update the light status after toggling
-      fetchLightsStatus(contract);
-    } catch (error) {
-      console.error("Error toggling light:", error);
-    }
-  };
+        const r = minColor.r + ((maxColor.r - minColor.r) * (confirmedIntensity / 100));
+        const g = minColor.g + ((maxColor.g - minColor.g) * (confirmedIntensity / 100));
+        const b = minColor.b + ((maxColor.b - minColor.b) * (confirmedIntensity / 100));
 
-  return (
-    <div className="container text-center mt-5">
-      <h1 className="mb-4">IoT Lights Control Panel</h1>
-      {!isMetaMaskConnected && (
-        <div className="alert alert-warning">
-          Please connect to MetaMask to use this app.
-        </div>
-      )}
-      <div className="row justify-content-center">
-        {lights.map((isOn, index) => (
-          <div key={index} className="col-4 mb-3">
-            <div
-              className={`rounded-circle mb-2 ${
-                isOn ? "bg-success" : "bg-danger"
-              }`}
-              style={{ width: "100px", height: "100px" }}
-            ></div>
-            <button
-              className="btn btn-primary"
-              onClick={() => toggleLight(index)}
-            >
-              Toggle Light {index + 1}
+        return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+    };
+
+    return (
+        <div style={{ padding: "20px", fontFamily: "Arial" }}>
+            <h2>Light Control</h2>
+            <button onClick={toggleLight}>
+                {isOn ? "Turn Light Off" : "Turn Light On"}
             </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+            
+            {isOn && (
+                <>
+                    <p>Intensity: {intensity}%</p>
+                    <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={intensity}
+                        onChange={handleIntensityChange}
+                    />
+                </>
+            )}
+
+            <div
+                style={{
+                    marginTop: "20px",
+                    width: "100px",
+                    height: "100px",
+                    backgroundColor: getLightColor(),
+                    borderRadius: "50%",
+                    boxShadow: isOn ? `0px 0px ${confirmedIntensity * 0.5}px ${confirmedIntensity * 0.2}px ${getLightColor()}` : "none",
+                    transition: "background-color 0.2s ease, box-shadow 0.2s ease",
+                }}
+            >
+                {isLoading && <p style={{ textAlign: "center", color: "#999" }}>Updating...</p>}
+            </div>
+        </div>
+    );
+};
 
 export default App;

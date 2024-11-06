@@ -5,11 +5,11 @@ async function main() {
   const [deployer] = await ethers.getSigners(); // Using second account
   console.log("Deploying contracts with the account:", deployer.address);
 
-  const IotaLights = await ethers.getContractFactory("IotaLights", deployer);
-  const lights = await IotaLights.deploy();
+  const contractName = await ethers.getContractFactory("SliderLight", deployer);
+  const contract = await contractName.deploy();
   
-  await lights.waitForDeployment();
-  const address = await lights.getAddress();
+  await contract.waitForDeployment();
+  const address = await contract.getAddress();
 
   console.log("IotaLights contract deployed to:", address);
 }
