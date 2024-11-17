@@ -1,13 +1,17 @@
 const { ethers } = require("hardhat");
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  // Get a different account each time by using a different index
+  const [deployer] = await ethers.getSigners(); // Using second account
   console.log("Deploying contracts with the account:", deployer.address);
 
-  const IotaLights = await ethers.getContractFactory("IotaLights");
-  const lights = await IotaLights.deploy();
+  const contractName = await ethers.getContractFactory("SmartHome", deployer);
+  const contract = await contractName.deploy();
+  
+  await contract.waitForDeployment();
+  const address = await contract.getAddress();
 
-  console.log("IotaLights contract deployed to:", lights.address);
+  console.log("IotaLights contract deployed to:", address);
 }
 
 main().catch((error) => {
