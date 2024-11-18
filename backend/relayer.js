@@ -13,6 +13,13 @@ const relayerWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 const contractAddress = process.env.CONTRACT_ADDRESS;
 const contractABI = [
     {
+        "inputs": [],
+        "name": "lightIntensity",
+        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [{ "internalType": "uint256", "name": "_intensity", "type": "uint256" }],
         "name": "setLightIntensity",
         "outputs": [],
@@ -20,6 +27,7 @@ const contractABI = [
         "type": "function"
     }
 ];
+
 const lightContract = new ethers.Contract(contractAddress, contractABI, relayerWallet);
 
 app.post('/relay', async (req, res) => {
