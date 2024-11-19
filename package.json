@@ -5,6 +5,14 @@
     "hardhat": "^2.22.15"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0"
-  }
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "concurrently": "^9.1.0"
+  },
+
+    "scripts": {
+      "start": "concurrently \"npm run server\" \"npm run frontend\"",
+      "server": "node backend/relayer.js",
+      "frontend": "npm start --prefix frontend"
+    }
+  
 }

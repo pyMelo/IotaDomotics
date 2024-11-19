@@ -3,21 +3,42 @@ import { ethers } from "ethers";
 
 const App = () => {
     const [isOn, setIsOn] = useState(false);
-    const [intensity, setIntensity] = useState(50); // UI-controlled value
-    const [confirmedIntensity, setConfirmedIntensity] = useState(0); // Blockchain-confirmed value
-    const [isLoading, setIsLoading] = useState(false); // Show rotating animation
-    const [showPopup, setShowPopup] = useState(false); // Show popup window after slider release
+    const [intensity, setIntensity] = useState(50); 
+    const [confirmedIntensity, setConfirmedIntensity] = useState(0); 
+    const [isLoading, setIsLoading] = useState(false); 
+    const [showPopup, setShowPopup] = useState(false); 
 
-    const debounceTimeout = useRef(null); // Timeout for debouncing
+    const debounceTimeout = useRef(null);
 
     const provider = new ethers.JsonRpcProvider(process.env.REACT_APP_SHIMMER_RPC_URL || "https://json-rpc.evm.testnet.shimmer.network");
-    const contractAddress = "0x1C44510e244dB511c08743A96cDb3f9ed3620f0c";
+    const contractAddress = "0x804b61Bf30B888AeB5306bbf445556d9f8479053";
     const contractABI = [
         {
             "inputs": [],
             "name": "lightIntensity",
             "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
             "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "isLightOn",
+            "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [{ "internalType": "uint256", "name": "_intensity", "type": "uint256" }],
+            "name": "setLightIntensity",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "turnLightOff",
+            "outputs": [],
+            "stateMutability": "nonpayable",
             "type": "function"
         }
     ];
@@ -27,27 +48,28 @@ const App = () => {
         const fetchContractState = async () => {
             try {
                 const intensityFromContract = await contract.lightIntensity();
-                const currentIntensity = parseInt(intensityFromContract.toString(), 10);
+                const isLightOnFromContract = await contract.isLightOn();
 
+                const currentIntensity = parseInt(intensityFromContract.toString(), 10);
                 setConfirmedIntensity(currentIntensity);
                 setIntensity(currentIntensity);
-                setIsOn(currentIntensity > 0);
+                setIsOn(isLightOnFromContract);
             } catch (error) {
                 console.error("Failed to fetch contract state:", error);
             }
         };
 
         fetchContractState();
-    }, []); // Run only once when the component mounts
+    }, []); 
 
-    const sendToRelayer = async (newIntensity) => {
-        setShowPopup(true); // Show the popup once the transaction starts
-        setIsLoading(true); // Show rotating animation
+    const sendToRelayer = async (newIntensity, isTurningOn) => {
+        setShowPopup(true); 
+        setIsLoading(true); 
         try {
             const response = await fetch("http://localhost:4000/relay", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ isOn: true, intensity: newIntensity }),
+                body: JSON.stringify({ isOn: isTurningOn, intensity: newIntensity }),
             });
             const data = await response.json();
             console.log("Transaction successful:", data.txHash);
@@ -59,8 +81,8 @@ const App = () => {
         } catch (error) {
             console.error("Failed to update intensity:", error);
         } finally {
-            setIsLoading(false); // Stop animation
-            setShowPopup(false); // Close the popup
+            setIsLoading(false); 
+            setShowPopup(false); 
         }
     };
 
@@ -72,11 +94,8 @@ const App = () => {
             clearTimeout(debounceTimeout.current);
         }
 
-        // Debounce to only send the transaction after the user has released the slider
         debounceTimeout.current = setTimeout(() => {
-            if (isOn) {
-                sendToRelayer(newIntensity);
-            }
+            sendToRelayer(newIntensity, isOn);
         }, 500);
     };
 
@@ -84,25 +103,21 @@ const App = () => {
         const newStatus = !isOn;
         setIsOn(newStatus);
 
-        setShowPopup(true); // Show popup on light toggle
-        setIsLoading(true); // Show animation for turning on/off
+        setShowPopup(true); 
+        setIsLoading(true); 
 
         if (!newStatus) {
-            setIntensity(0);
-            sendToRelayer(0);
+            sendToRelayer(confirmedIntensity, false); 
         } else {
-            setTimeout(() => {
-                setIsLoading(false);
-                setShowPopup(false);
-            }, 1000); // Simulate delay for turning on
+            sendToRelayer(confirmedIntensity, true); 
         }
     };
 
     const getLightColor = () => {
         if (!isOn) return "gray";
 
-        const minColor = { r: 255, g: 230, b: 128 }; // Soft yellow
-        const maxColor = { r: 255, g: 204, b: 0 }; // Bright yellow
+        const minColor = { r: 255, g: 230, b: 128 }; 
+        const maxColor = { r: 255, g: 204, b: 0 }; 
 
         const r = minColor.r + ((maxColor.r - minColor.r) * (confirmedIntensity / 100));
         const g = minColor.g + ((maxColor.g - minColor.g) * (confirmedIntensity / 100));
@@ -118,7 +133,7 @@ const App = () => {
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                background: "linear-gradient(to bottom, #6a0dad, #f4f4f9)", // Themed background
+                background: "linear-gradient(to bottom, #6a0dad, #f4f4f9)",
                 position: "relative",
             }}
         >
@@ -152,28 +167,24 @@ const App = () => {
                     {isOn ? "Turn Light Off" : "Turn Light On"}
                 </button>
 
-                {isOn && (
-                    <>
-                        <p style={{ fontSize: "1.2rem", color: "#fff", marginBottom: "15px" }}>
-                            Intensity: {intensity}%
-                        </p>
-                        <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={intensity}
-                            onChange={handleIntensityChange}
-                            style={{
-                                width: "90%",
-                                height: "6px",
-                                marginBottom: "40px",
-                                background: "#fff",
-                                accentColor: "#fff",
-                                borderRadius: "5px",
-                            }}
-                        />
-                    </>
-                )}
+                <p style={{ fontSize: "1.2rem", color: "#fff", marginBottom: "15px" }}>
+                    Intensity: {intensity}%
+                </p>
+                <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={intensity}
+                    onChange={handleIntensityChange}
+                    style={{
+                        width: "90%",
+                        height: "6px",
+                        marginBottom: "40px",
+                        background: "#fff",
+                        accentColor: "#fff",
+                        borderRadius: "5px",
+                    }}
+                />
 
                 <div
                     style={{
@@ -184,12 +195,11 @@ const App = () => {
                         margin: "40px auto 0",
                         boxShadow: isOn ? `0 0 ${confirmedIntensity * 1.2}px ${confirmedIntensity * 0.6}px ${getLightColor()}` : "none",
                         transition: "background-color 0.3s ease, box-shadow 0.3s ease",
-                        animation: isLoading ? "spin 1s linear infinite" : "none", // Rotate when loading
+                        animation: isLoading ? "spin 1s linear infinite" : "none",
                     }}
                 />
             </div>
 
-            {/* Popup Window for Updating */}
             {showPopup && (
                 <div
                     style={{
@@ -224,7 +234,7 @@ const App = () => {
                                 border: "4px solid #6a0dad",
                                 borderTop: "4px solid transparent",
                                 borderRadius: "50%",
-                                animation: "spin 1s linear infinite", // Smooth spinning animation
+                                animation: "spin 1s linear infinite",
                                 margin: "0 auto",
                             }}
                         />
