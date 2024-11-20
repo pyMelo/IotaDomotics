@@ -49,9 +49,13 @@ Add the parameters like your private key and the contract deployed with the foll
 
 ```bash
 PRIVATE_KEY= "your private key"
-CONTRACT_ADDRESS= "your contract"
+CONTRACT_ADDRESS= "your contract address"
 NETWORK_URL=https://json-rpc.evm.testnet.shimmer.network
 PORT=4000
+```
+We're suggesting to insert manually in the script *frontend/App.js* (line 14) the address of your contract 
+```bash
+    const contractAddress = 'your contract address';
 ```
 
 ### 4. Deploy your contract
@@ -68,10 +72,7 @@ npx hardhat compile
 npx hardhat run scripts/deploy.js --network shimmerTestnet
 ```
 
-We're suggesting to insert manually in the script *frontend/App.js* (line 14) the address of your contract 
-```bash
-    const contractAddress = 'your contract address';
-```
+
 
 ### 5. Run the project
 
