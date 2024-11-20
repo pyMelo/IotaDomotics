@@ -3,15 +3,15 @@ import { ethers } from "ethers";
 
 const App = () => {
     const [isOn, setIsOn] = useState(false);
-    const [intensity, setIntensity] = useState(50); 
+    const [intensity, setIntensity] = useState(false); 
     const [confirmedIntensity, setConfirmedIntensity] = useState(0); 
     const [isLoading, setIsLoading] = useState(false); 
     const [showPopup, setShowPopup] = useState(false); 
 
     const debounceTimeout = useRef(null);
 
-    const provider = new ethers.JsonRpcProvider(process.env.REACT_APP_SHIMMER_RPC_URL || "https://json-rpc.evm.testnet.shimmer.network");
-    const contractAddress = "0x804b61Bf30B888AeB5306bbf445556d9f8479053";
+    const provider = new ethers.JsonRpcProvider(process.env.NETWORK_URL || "https://json-rpc.evm.testnet.shimmer.network");
+    const contractAddress = 'your contract address';
     const contractABI = [
         {
             "inputs": [],

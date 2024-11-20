@@ -66,7 +66,11 @@ npx hardhat compile
 
 ```bash
 npx hardhat run scripts/deploy.js --network shimmerTestnet
+```
 
+We're suggesting to insert manually in the script *frontend/App.js* (line 14) the address of your contract 
+```bash
+    const contractAddress = 'your contract address';
 ```
 
 ### 5. Run the project
