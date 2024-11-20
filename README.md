@@ -1,4 +1,4 @@
-# Hardhat Smart Contract Project
+# Shimmer Smart Light
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 
