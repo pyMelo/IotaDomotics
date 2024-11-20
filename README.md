@@ -36,7 +36,7 @@ cd ShimmerSmartLight
 
 ### 2. Install dependencies
 
-Install all the dependencies of this project
+Install all the dependencies of this project, backend & frontend
 
 ```bash
 npm install
@@ -57,7 +57,7 @@ PORT=4000
 ### 4. Deploy your contract
 
 Use this command line in sequence to compile an deploy your contract in shimmerTest network. In the terminal will show up the contract address that you 
-should replace in the **.env* file.
+should replace in the *.env* file.
 
 ```bash
 npx hardhat compile
