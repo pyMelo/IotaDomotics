@@ -30,7 +30,7 @@ Start by cloning the repository to your local machine and navigating to the proj
 
 ```bash
 git clone https://github.com/your-username/ShimmerSmartLight.git
-cd your-repo-name
+cd ShimmerSmartLight
 ```
 ---
 
